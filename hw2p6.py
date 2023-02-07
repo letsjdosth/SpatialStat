@@ -57,7 +57,6 @@ def KL_approx_for_exp_cov(order, L_cov_domain_bound):
 def fourier_basis_approx_for_exp_cov(order, L_cov_domain_bound):
     L = L_cov_domain_bound
     def eigenval(j):
-        L = L_cov_domain_bound
         k = j*pi/(2*L_cov_domain_bound)
         return 2*exp(-L) * (k*sin(k*L)-cos(k*L)+exp(L)) / (1+k**2)
 
@@ -65,9 +64,9 @@ def fourier_basis_approx_for_exp_cov(order, L_cov_domain_bound):
         return c_exp(1j*j*pi*s/(2*L))/(2*L)**0.5
     
     s_grid = np.arange(-L_cov_domain_bound, L_cov_domain_bound, 1)
+
     eigenval_array = []
     eigenfunc_array = []
-
     for j in range(1,order+1):
         eigenval_array.append(eigenval(j))
         eigenfunc_array.append(np.array([eigenfunc(j, s) for s in s_grid]))

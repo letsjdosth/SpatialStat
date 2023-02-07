@@ -60,15 +60,15 @@ plt.show()
 def fourier_basis_approx_for_exp_cov(order, L_cov_domain_bound):
     L = L_cov_domain_bound
     def eigenval(j):
-        L = L_cov_domain_bound
-        k = j*pi/(2*L_cov_domain_bound)
+        k = j*pi/(2*L)
         return 2*exp(-L) * (k*sin(k*L)-cos(k*L)+exp(L)) / (1+k**2)
 
     def eigenfunc(j, s):
         return c_exp(1j*j*pi*s/(2*L))/(2*L)**0.5
     
     s_grid = np.arange(0, L_cov_domain_bound, 0.02)
-    comp = 0
+    
+    comp = (0.5*eigenval(0)*np.array([eigenfunc(0, 0) for s in s_grid])*np.conjugate(np.array([eigenfunc(0, s) for s in s_grid])))
     for j in range(1,order+1):
         comp += (eigenval(j)*np.array([eigenfunc(j, 0) for s in s_grid])*np.conjugate(np.array([eigenfunc(j, s) for s in s_grid])))
     return comp
