@@ -22,21 +22,28 @@ class IsotropicCovBase:
     def semi_variogram(self, dist):
         pass
 
-    def plot_covariance(self, start, end, by, show=True):
+    def plot_covariance(self, start, end, by, plt_axis=None, show=True):
         grid = np.arange(start, end, by)
         cov_on_grid = []
         for x in grid:
             cov_on_grid.append(self.covariance_function(x))
-        plt.plot(grid, cov_on_grid)
+        
+        if plt_axis is not None:
+            plt_axis.plot(grid, cov_on_grid)
+        else:
+            plt.plot(grid, cov_on_grid)
         if show:
             plt.show()
 
-    def plot_semi_variogram(self, start, end, by, show=True):
+    def plot_semi_variogram(self, start, end, by, plt_axis=None, show=True):
         grid = np.arange(start, end, by)
         semi_var_on_grid = []
         for x in grid:
             semi_var_on_grid.append(self.semi_variogram(x))
-        plt.plot(grid, semi_var_on_grid)
+        if plt_axis is not None:
+            plt_axis.plot(grid, semi_var_on_grid)
+        else:
+            plt.plot(grid, semi_var_on_grid)
         if show:
             plt.show()
 
