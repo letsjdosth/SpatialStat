@@ -1,4 +1,5 @@
 import csv
+from math import pi
 from functools import partial
 from random import normalvariate
 
@@ -6,7 +7,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 import scipy.optimize as optim
+import scipy.linalg
 
+from spatial_util.least_squares import OLS_by_QR, GLS_by_cholesky
 from spatial_util.cov_functions import Matern
 
 data_soc = []
@@ -28,11 +31,11 @@ design_1st_X = np.array([[1, x, y] for x,y in zip(data_long, data_lat)])
 design_2nd_X = np.array([[1, x, y, x**2, y**2, x*y] for x,y in zip(data_long, data_lat)])
 resp_Y = np.array(data_soc)
 
-trend_1st_coeff_mle = np.linalg.inv(np.transpose(design_1st_X)@design_1st_X)@np.transpose(design_1st_X)@resp_Y
-trend_2nd_coeff_mle = np.linalg.inv(np.transpose(design_2nd_X)@design_2nd_X)@np.transpose(design_2nd_X)@resp_Y
+trend_1st_coeff_OLS_fit, _ = OLS_by_QR(design_1st_X, resp_Y)
+trend_2nd_coeff_OLS_fit, _ = OLS_by_QR(design_2nd_X, resp_Y)
 
-trend_1st_fit = design_1st_X@trend_1st_coeff_mle
-trend_2nd_fit = design_2nd_X@trend_2nd_coeff_mle
+trend_1st_fit = design_1st_X@trend_1st_coeff_OLS_fit
+trend_2nd_fit = design_2nd_X@trend_2nd_coeff_OLS_fit
 
 trend_1st_residual = resp_Y - trend_1st_fit
 trend_2nd_residual = resp_Y - trend_2nd_fit
@@ -146,6 +149,7 @@ bin_dist_u_d0, bin_vario_r_d0 = binning(dist_u_d0, vario_r_d0, 12)
 bin_dist_u_d1, bin_vario_r_d1 = binning(dist_u_d1, vario_r_d1, 12)
 bin_dist_u_d2, bin_vario_r_d2 = binning(dist_u_d2, vario_r_d2, 12)
 bin_dist_u_d3, bin_vario_r_d3 = binning(dist_u_d3, vario_r_d3, 12)
+print("possible nugget:", bin_vario_r[0])
 
 # fig_vario, axs_vario = plt.subplots(1, 2, figsize=(8, 4))
 # fig_vario.tight_layout()
@@ -193,10 +197,10 @@ def minimize_func_base(x, nu_smoothness, bin_dist_u, bin_semivario_r):
 # print("v05:",optim_result_v05)
 # matern_inst_v05 = Matern(0.5, optim_result_v05.x[0], optim_result_v05.x[1])
 
-minimize_func_v10 = partial(minimize_func_base, nu_smoothness=1, bin_dist_u=bin_dist_u, bin_semivario_r=bin_vario_r)
-optim_result_v10 = optim.minimize(minimize_func_v10, [1,1], method='nelder-mead')
-print("v10:",optim_result_v10)
-matern_inst_v10 = Matern(1, optim_result_v10.x[0], optim_result_v10.x[1])
+# minimize_func_v10 = partial(minimize_func_base, nu_smoothness=1, bin_dist_u=bin_dist_u, bin_semivario_r=bin_vario_r)
+# optim_result_v10 = optim.minimize(minimize_func_v10, [1,1], method='nelder-mead')
+# print("v10:",optim_result_v10)
+# matern_inst_v10 = Matern(1, optim_result_v10.x[0], optim_result_v10.x[1])
 
 
 # minimize_func_v15 = partial(minimize_func_base, nu_smoothness=1.5, bin_dist_u=bin_dist_u, bin_semivario_r=bin_vario_r)
@@ -231,63 +235,107 @@ matern_inst_v10 = Matern(1, optim_result_v10.x[0], optim_result_v10.x[1])
 
 #need to estimate mle, again
 
-def gen_contour_level_matrix_for_likelihood(meshgrid_sigma2, meshgrid_phi, trend_residual, data_long, data_lat, nu_smoothness):
-    val_on_grid = np.empty(meshgrid_sigma2.shape)
-    data_loc = [[i+normalvariate(0,0.01),j+normalvariate(0,0.01)] for i,j in zip(data_long, data_lat)]
-    trend_residual = np.array(trend_residual)
 
+def negative_profile_likelihood(scale_sigma2_range_phi, smoothness_nu, trend_design_X, resp_Y, data_long, data_lat, nugget=0):
+    #profile: beta
+    scale_sigma2 = scale_sigma2_range_phi[0]
+    range_phi = scale_sigma2_range_phi[1]
+    matern_scale1_inst = Matern(smoothness_nu, 1, range_phi)
+    data_points = [[lon+normalvariate(0,0.1), lat+normalvariate(0,0.1)] for lon, lat in zip(data_long, data_lat)]
+    matern_cov = matern_scale1_inst.cov_matrix(data_points)
+    matern_cov = scale_sigma2*matern_cov + nugget*np.eye(matern_cov.shape[0])
+
+    _, sse_gls, log_det_matern_cov_mat = GLS_by_cholesky(trend_design_X, resp_Y, matern_cov)
+
+    p_lik = -0.5*log_det_matern_cov_mat - 0.5*sse_gls
+    return -p_lik
+
+def negative_profile_likelihood_2(range_phi, smoothness_nu, trend_design_X, resp_Y, data_long, data_lat, nugget=0):
+    #profile: beta, sigma2
+    range_phi = range_phi[0]
+    n_data = len(resp_Y)
+    matern_scale1_inst = Matern(smoothness_nu, 1, range_phi)
+    data_points = [[lon+normalvariate(0,0.1), lat+normalvariate(0,0.1)] for lon, lat in zip(data_long, data_lat)]
+    matern_cov = matern_scale1_inst.cov_matrix(data_points)
+    matern_cov = matern_cov + nugget*np.eye(matern_cov.shape[0])
+
+    _, sse_gls, log_det_matern_cov_mat = GLS_by_cholesky(trend_design_X, resp_Y, matern_cov)
+    p_sigma2 = sse_gls/n_data
+
+    p_lik = -0.5*n_data*np.log(2*pi*p_sigma2) -0.5*log_det_matern_cov_mat
+    return -p_lik
+
+pmle_optim_object = partial(negative_profile_likelihood, trend_design_X=design_2nd_X, resp_Y=resp_Y, data_long=data_long, data_lat=data_lat, nugget=0)
+# optim_result_pmle = optim.minimize(pmle_optim_object, [298-0, 0.169], args=(1), method='Nelder-Mead')
+# print(optim_result_pmle)
+
+pmle_optim_object2 = partial(negative_profile_likelihood_2, trend_design_X=design_2nd_X, resp_Y=resp_Y, data_long=data_long, data_lat=data_lat, nugget=0)
+# optim_result_pmle2 = optim.minimize(pmle_optim_object2, [0.169], args=(1), method='Nelder-Mead')
+# print(optim_result_pmle2)
+
+
+def gen_contour_level_matrix_for_likelihood(meshgrid_sigma2, meshgrid_phi, nu_smoothness):
+    val_on_grid = np.empty(meshgrid_sigma2.shape)
     for i in range(meshgrid_sigma2.shape[0]):
         for j in range(meshgrid_sigma2.shape[1]):
             sigma2 = meshgrid_sigma2[i,j]
             phi = meshgrid_phi[i,j]
-            # print(i, j, sigma2, phi)
-
-            matern_inst = Matern(nu_smoothness, 1, phi)
-            cov_mat = matern_inst.cov_matrix(data_loc)
-            inv_cov_mat = np.linalg.inv(cov_mat) #modify here to use QR decomposition
-            sign, log_det = np.linalg.slogdet(cov_mat) #slogdet use LU decomposition
-            log_det_cov = sign*log_det + np.log(sigma2) * np.array(cov_mat).shape[0]
-            ker = -(1/(2*sigma2))*(np.transpose(trend_residual)@inv_cov_mat@trend_residual)
-            print(i,j, sigma2, phi, log_det_cov, ker)
-
-            val_on_grid[i,j] = (-0.5)*log_det_cov + ker
-    return val_on_grid
-
-def gen_contour_level_matrix_for_marginal_likelihood(grid_phi, design_D, trend_residual, data_long, data_lat, nu_smoothness):
-    data_loc = [[i+normalvariate(0,0.01),j+normalvariate(0,0.01)] for i,j in zip(data_long, data_lat)]
-    trend_residual = np.array(trend_residual)
-    val_on_grid = []
-
-    for phi in grid_phi:
-        matern_inst = Matern(nu_smoothness, 1, phi)
-        cov_mat = matern_inst.cov_matrix(data_loc)
-        
-        sign_V, log_det_V = np.linalg.slogdet(cov_mat) #slogdet use LU decomposition
-        log_det_cov = (-0.5) * sign_V * log_det_V
-        
-        inv_cov_mat = np.linalg.inv(cov_mat) #modify here to use QR decomposition
-        sign_ker, log_det_ker = np.linalg.slogdet(np.transpose(design_D)@inv_cov_mat@design_D)
-        log_det_ker = (-0.5) * sign_ker * log_det_ker
-        
-        s2 = np.transpose(trend_residual)@inv_cov_mat@trend_residual
-        log_det_s2 = -(design_D.shape[0]-design_D.shape[1])/2 * np.log(abs(s2))
-
-        val_on_grid.append(log_det_cov + log_det_ker + log_det_s2)
+            val = pmle_optim_object([sigma2, phi], nu_smoothness)
+            print(i, j, val)
+            val_on_grid[i,j] = val
     return val_on_grid
 
 
-grid_sigma2 = np.linspace(max(0.1, optim_result_v10.x[0]-10), optim_result_v10.x[0]+10, 10)
-grid_phi = np.linspace(max(0.1, optim_result_v10.x[1]-0.05), optim_result_v10.x[1]+2, 30)
-meshgrid_sigma2, meshgrid_phi = np.meshgrid(grid_sigma2, grid_phi)
+# grid_sigma2 = np.linspace(220, 320, 10)
+# grid_phi = np.linspace(0.02, 0.20, 10)
+# meshgrid_sigma2, meshgrid_phi = np.meshgrid(grid_sigma2, grid_phi)
 
 # print(optim_result_v10.x) #[298.652533, 0.169885285]
-# contour_level_mat = gen_contour_level_matrix_for_likelihood(meshgrid_sigma2, meshgrid_phi, trend_2nd_residual, data_long, data_lat, nu_smoothness=1)
-# plt.contour(grid_sigma2, grid_phi, contour_level_mat, levels=30)
+# contour_level_mat = gen_contour_level_matrix_for_likelihood(meshgrid_sigma2, meshgrid_phi, nu_smoothness=1)
+# plt.contour(grid_sigma2, grid_phi, contour_level_mat, levels=10)
 # plt.scatter([298.652533], [0.169885285])
 # plt.show()
 
 
-level_list_marginal = gen_contour_level_matrix_for_marginal_likelihood(grid_phi, design_2nd_X, trend_2nd_residual, data_long, data_lat, 1)
+def marginal_likelihood(range_phi, smoothness_nu, trend_design_X, resp_Y, data_long, data_lat, nugget=0):
+    range_phi = range_phi[0]
+    n_data = len(resp_Y)
+    matern_scale1_inst = Matern(smoothness_nu, 1, range_phi)
+    data_points = [[lon+normalvariate(0,0.1), lat+normalvariate(0,0.1)] for lon, lat in zip(data_long, data_lat)]
+    matern_cov = matern_scale1_inst.cov_matrix(data_points)
+    matern_cov = matern_cov + nugget*np.eye(matern_cov.shape[0])
+
+    # cov_mat_Sigma = LLt
+    L = np.linalg.cholesky(matern_cov)
+    log_det_matern_cov = np.sum(np.log(np.diag(L)))*2
+    
+    Z = scipy.linalg.solve_triangular(L, resp_Y, lower=True) #Z = L^(-1)Y
+    F = scipy.linalg.solve_triangular(L, trend_design_X, lower=True) #F = L^(-1)X
+    #now, Z = F*beta + error(with cov=I)
+    
+    beta_fit, S2 = OLS_by_QR(F, Z)
+    DtVinvD = np.transpose(F)@F
+
+    m_lik = -0.5*log_det_matern_cov -0.5*np.linalg.slogdet(DtVinvD)[1] -0.5*(n_data-len(beta_fit))*np.log(S2)
+
+    return m_lik
+
+
+grid_phi = np.linspace(0.02, 0.20, 20)
+mmle_optim_object = partial(marginal_likelihood, trend_design_X=design_2nd_X, resp_Y=resp_Y, data_long=data_long, data_lat=data_lat, nugget=0)
+
+level_list_marginal = [mmle_optim_object([p], 0.5) for p in grid_phi]
 plt.plot(grid_phi, level_list_marginal)
-plt.axvline(optim_result_v10.x[1])
+plt.show()
+
+level_list_marginal = [mmle_optim_object([p], 1) for p in grid_phi]
+plt.plot(grid_phi, level_list_marginal)
+plt.show()
+
+level_list_marginal = [mmle_optim_object([p], 1.5) for p in grid_phi]
+plt.plot(grid_phi, level_list_marginal)
+plt.show()
+
+level_list_marginal = [mmle_optim_object([p], 2.5) for p in grid_phi]
+plt.plot(grid_phi, level_list_marginal)
 plt.show()
