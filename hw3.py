@@ -1,7 +1,7 @@
 import csv
 from math import pi
 from functools import partial
-from random import normalvariate
+from random import seed, normalvariate
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -138,18 +138,18 @@ def binning(dist, vario, num_bins):
     return bin_middle_u, bin_vario_r
 
 
-dist_u, vario_r = semi_variogram(trend_2nd_residual, data_long, data_lat)
-dist_u_d0, vario_r_d0 = directional_semi_variogram(trend_2nd_residual, data_long, data_lat, 0) #right
-dist_u_d1, vario_r_d1 = directional_semi_variogram(trend_2nd_residual, data_long, data_lat, 1) #left
-dist_u_d2, vario_r_d2 = directional_semi_variogram(trend_2nd_residual, data_long, data_lat, 2) #up
-dist_u_d3, vario_r_d3 = directional_semi_variogram(trend_2nd_residual, data_long, data_lat, 3) #down
+# dist_u, vario_r = semi_variogram(trend_2nd_residual, data_long, data_lat)
+# dist_u_d0, vario_r_d0 = directional_semi_variogram(trend_2nd_residual, data_long, data_lat, 0) #right
+# dist_u_d1, vario_r_d1 = directional_semi_variogram(trend_2nd_residual, data_long, data_lat, 1) #left
+# dist_u_d2, vario_r_d2 = directional_semi_variogram(trend_2nd_residual, data_long, data_lat, 2) #up
+# dist_u_d3, vario_r_d3 = directional_semi_variogram(trend_2nd_residual, data_long, data_lat, 3) #down
 
-bin_dist_u, bin_vario_r = binning(dist_u, vario_r, 12)
-bin_dist_u_d0, bin_vario_r_d0 = binning(dist_u_d0, vario_r_d0, 12)
-bin_dist_u_d1, bin_vario_r_d1 = binning(dist_u_d1, vario_r_d1, 12)
-bin_dist_u_d2, bin_vario_r_d2 = binning(dist_u_d2, vario_r_d2, 12)
-bin_dist_u_d3, bin_vario_r_d3 = binning(dist_u_d3, vario_r_d3, 12)
-print("possible nugget:", bin_vario_r[0])
+# bin_dist_u, bin_vario_r = binning(dist_u, vario_r, 12)
+# bin_dist_u_d0, bin_vario_r_d0 = binning(dist_u_d0, vario_r_d0, 12)
+# bin_dist_u_d1, bin_vario_r_d1 = binning(dist_u_d1, vario_r_d1, 12)
+# bin_dist_u_d2, bin_vario_r_d2 = binning(dist_u_d2, vario_r_d2, 12)
+# bin_dist_u_d3, bin_vario_r_d3 = binning(dist_u_d3, vario_r_d3, 12)
+# print("possible nugget:", bin_vario_r[0])
 
 # fig_vario, axs_vario = plt.subplots(1, 2, figsize=(8, 4))
 # fig_vario.tight_layout()
@@ -233,15 +233,17 @@ def minimize_func_base(x, nu_smoothness, bin_dist_u, bin_semivario_r):
 
 # Q4, Q5
 
-#need to estimate mle, again
-
+#jitter
+seed(20230213)
+data_long = [long + normalvariate(0,0.01) for long in data_long]
+data_lat = [lat + normalvariate(0,0.01) for lat in data_lat]
 
 def negative_profile_likelihood(scale_sigma2_range_phi, smoothness_nu, trend_design_X, resp_Y, data_long, data_lat, nugget=0):
     #profile: beta
     scale_sigma2 = scale_sigma2_range_phi[0]
     range_phi = scale_sigma2_range_phi[1]
     matern_scale1_inst = Matern(smoothness_nu, 1, range_phi)
-    data_points = [[lon+normalvariate(0,0.1), lat+normalvariate(0,0.1)] for lon, lat in zip(data_long, data_lat)]
+    data_points = [[lon, lat] for lon, lat in zip(data_long, data_lat)]
     matern_cov = matern_scale1_inst.cov_matrix(data_points)
     matern_cov = scale_sigma2*matern_cov + nugget*np.eye(matern_cov.shape[0])
 
@@ -255,7 +257,7 @@ def negative_profile_likelihood_2(range_phi, smoothness_nu, trend_design_X, resp
     range_phi = range_phi[0]
     n_data = len(resp_Y)
     matern_scale1_inst = Matern(smoothness_nu, 1, range_phi)
-    data_points = [[lon+normalvariate(0,0.1), lat+normalvariate(0,0.1)] for lon, lat in zip(data_long, data_lat)]
+    data_points = [[lon, lat] for lon, lat in zip(data_long, data_lat)]
     matern_cov = matern_scale1_inst.cov_matrix(data_points)
     matern_cov = matern_cov + nugget*np.eye(matern_cov.shape[0])
 
@@ -266,10 +268,10 @@ def negative_profile_likelihood_2(range_phi, smoothness_nu, trend_design_X, resp
     return -p_lik
 
 pmle_optim_object = partial(negative_profile_likelihood, trend_design_X=design_2nd_X, resp_Y=resp_Y, data_long=data_long, data_lat=data_lat, nugget=0)
-# optim_result_pmle = optim.minimize(pmle_optim_object, [298-0, 0.169], args=(1), method='Nelder-Mead')
+# optim_result_pmle = optim.minimize(pmle_optim_object, [240, 0.056], args=(0.5), method='Nelder-Mead', options={"maxiter":10})
 # print(optim_result_pmle)
 
-pmle_optim_object2 = partial(negative_profile_likelihood_2, trend_design_X=design_2nd_X, resp_Y=resp_Y, data_long=data_long, data_lat=data_lat, nugget=0)
+# pmle_optim_object2 = partial(negative_profile_likelihood_2, trend_design_X=design_2nd_X, resp_Y=resp_Y, data_long=data_long, data_lat=data_lat, nugget=0)
 # optim_result_pmle2 = optim.minimize(pmle_optim_object2, [0.169], args=(1), method='Nelder-Mead')
 # print(optim_result_pmle2)
 
@@ -281,27 +283,46 @@ def gen_contour_level_matrix_for_likelihood(meshgrid_sigma2, meshgrid_phi, nu_sm
             sigma2 = meshgrid_sigma2[i,j]
             phi = meshgrid_phi[i,j]
             val = pmle_optim_object([sigma2, phi], nu_smoothness)
-            print(i, j, val)
+            print(i, j, sigma2, phi, val)
             val_on_grid[i,j] = val
     return val_on_grid
 
 
-# grid_sigma2 = np.linspace(220, 320, 10)
-# grid_phi = np.linspace(0.02, 0.20, 10)
+# grid_sigma2 = np.linspace(180, 400, 10)
+# grid_phi = np.linspace(0.04, 0.15, 10)
 # meshgrid_sigma2, meshgrid_phi = np.meshgrid(grid_sigma2, grid_phi)
+# contour_level_mat = gen_contour_level_matrix_for_likelihood(meshgrid_sigma2, meshgrid_phi, nu_smoothness=0.5)
+# plt.contour(grid_sigma2, grid_phi, contour_level_mat, levels=10)
+# plt.show()
 
-# print(optim_result_v10.x) #[298.652533, 0.169885285]
+# grid_sigma2 = np.linspace(150, 350, 10)
+# grid_phi = np.linspace(0.009, 0.021, 10)
+# meshgrid_sigma2, meshgrid_phi = np.meshgrid(grid_sigma2, grid_phi)
 # contour_level_mat = gen_contour_level_matrix_for_likelihood(meshgrid_sigma2, meshgrid_phi, nu_smoothness=1)
 # plt.contour(grid_sigma2, grid_phi, contour_level_mat, levels=10)
-# plt.scatter([298.652533], [0.169885285])
 # plt.show()
+
+# grid_sigma2 = np.linspace(120, 370, 10)
+# grid_phi = np.linspace(0.004, 0.013, 10)
+# meshgrid_sigma2, meshgrid_phi = np.meshgrid(grid_sigma2, grid_phi)
+# contour_level_mat = gen_contour_level_matrix_for_likelihood(meshgrid_sigma2, meshgrid_phi, nu_smoothness=1.5)
+# plt.contour(grid_sigma2, grid_phi, contour_level_mat, levels=10)
+# plt.show()
+
+# grid_sigma2 = np.linspace(120, 370, 10)
+# grid_phi = np.linspace(0.001, 0.008, 10)
+# meshgrid_sigma2, meshgrid_phi = np.meshgrid(grid_sigma2, grid_phi)
+# contour_level_mat = gen_contour_level_matrix_for_likelihood(meshgrid_sigma2, meshgrid_phi, nu_smoothness=2.5)
+# plt.contour(grid_sigma2, grid_phi, contour_level_mat, levels=10)
+# plt.show()
+
 
 
 def marginal_likelihood(range_phi, smoothness_nu, trend_design_X, resp_Y, data_long, data_lat, nugget=0):
     range_phi = range_phi[0]
     n_data = len(resp_Y)
     matern_scale1_inst = Matern(smoothness_nu, 1, range_phi)
-    data_points = [[lon+normalvariate(0,0.1), lat+normalvariate(0,0.1)] for lon, lat in zip(data_long, data_lat)]
+    data_points = [[lon, lat] for lon, lat in zip(data_long, data_lat)]
     matern_cov = matern_scale1_inst.cov_matrix(data_points)
     matern_cov = matern_cov + nugget*np.eye(matern_cov.shape[0])
 
@@ -321,21 +342,25 @@ def marginal_likelihood(range_phi, smoothness_nu, trend_design_X, resp_Y, data_l
     return m_lik
 
 
-grid_phi = np.linspace(0.02, 0.20, 20)
+
 mmle_optim_object = partial(marginal_likelihood, trend_design_X=design_2nd_X, resp_Y=resp_Y, data_long=data_long, data_lat=data_lat, nugget=0)
 
-level_list_marginal = [mmle_optim_object([p], 0.5) for p in grid_phi]
-plt.plot(grid_phi, level_list_marginal)
-plt.show()
+# grid_phi = np.linspace(0.01, 0.2, 20)
+# level_list_marginal = [mmle_optim_object([p], 0.5) for p in grid_phi]
+# plt.plot(grid_phi, level_list_marginal)
+# plt.show()
 
-level_list_marginal = [mmle_optim_object([p], 1) for p in grid_phi]
-plt.plot(grid_phi, level_list_marginal)
-plt.show()
+# grid_phi = np.linspace(0.001, 0.02, 20)
+# level_list_marginal = [mmle_optim_object([p], 1) for p in grid_phi]
+# plt.plot(grid_phi, level_list_marginal)
+# plt.show()
 
-level_list_marginal = [mmle_optim_object([p], 1.5) for p in grid_phi]
-plt.plot(grid_phi, level_list_marginal)
-plt.show()
+# grid_phi = np.linspace(0.001, 0.01, 20)
+# level_list_marginal = [mmle_optim_object([p], 1.5) for p in grid_phi]
+# plt.plot(grid_phi, level_list_marginal)
+# plt.show()
 
-level_list_marginal = [mmle_optim_object([p], 2.5) for p in grid_phi]
-plt.plot(grid_phi, level_list_marginal)
-plt.show()
+# grid_phi = np.linspace(0.001, 0.01, 20)
+# level_list_marginal = [mmle_optim_object([p], 2.5) for p in grid_phi]
+# plt.plot(grid_phi, level_list_marginal)
+# plt.show()
