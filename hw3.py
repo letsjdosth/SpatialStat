@@ -23,8 +23,8 @@ with open('data/VA_soil_carbon.csv', newline='') as csvfile:
         data_long.append(float(row[9]))
         data_lat.append(float(row[10]))
 
-# plt.scatter(data_long, data_lat, s=data_soc, c=data_soc)
-# plt.show()
+plt.scatter(data_long, data_lat, s=data_soc, c=data_soc)
+plt.show()
 
 
 design_1st_X = np.array([[1, x, y] for x,y in zip(data_long, data_lat)])
@@ -40,35 +40,35 @@ trend_2nd_fit = design_2nd_X@trend_2nd_coeff_OLS_fit
 trend_1st_residual = resp_Y - trend_1st_fit
 trend_2nd_residual = resp_Y - trend_2nd_fit
 
-# fig1, axs1 = plt.subplots(1, 5, figsize=(15, 3))
-# fig1.tight_layout()
-# axs1[0].scatter(data_long, data_lat, s=data_soc, c=data_soc)
-# axs1[0].set_title("data")
-# axs1[1].scatter(data_long, data_lat, s=trend_1st_fit, c=trend_1st_fit)
-# axs1[1].set_title("fit")
-# axs1[2].scatter(data_long, data_lat, s=trend_1st_residual, c=trend_1st_residual)
-# axs1[2].set_title("res")
-# axs1[3].scatter(trend_1st_fit, trend_1st_residual)
-# axs1[3].axhline(0)
-# axs1[3].set_title("res vs fit")
-# stats.probplot(trend_1st_residual, dist=stats.norm, plot=axs1[4])
-# axs1[4].set_title("normalQQ for res")
-# plt.show()
+fig1, axs1 = plt.subplots(1, 5, figsize=(15, 3))
+fig1.tight_layout()
+axs1[0].scatter(data_long, data_lat, s=data_soc, c=data_soc)
+axs1[0].set_title("data")
+axs1[1].scatter(data_long, data_lat, s=trend_1st_fit, c=trend_1st_fit)
+axs1[1].set_title("fit")
+axs1[2].scatter(data_long, data_lat, s=trend_1st_residual, c=trend_1st_residual)
+axs1[2].set_title("res")
+axs1[3].scatter(trend_1st_fit, trend_1st_residual)
+axs1[3].axhline(0)
+axs1[3].set_title("res vs fit")
+stats.probplot(trend_1st_residual, dist=stats.norm, plot=axs1[4])
+axs1[4].set_title("normalQQ for res")
+plt.show()
 
-# fig2, axs2 = plt.subplots(1, 5, figsize=(15, 3))
-# fig2.tight_layout()
-# axs2[0].scatter(data_long, data_lat, s=data_soc, c=data_soc)
-# axs2[0].set_title("data")
-# axs2[1].scatter(data_long, data_lat, s=trend_2nd_fit, c=trend_2nd_fit)
-# axs2[1].set_title("fit")
-# axs2[2].scatter(data_long, data_lat, s=trend_2nd_residual, c=trend_2nd_residual)
-# axs2[2].set_title("res")
-# axs2[3].scatter(trend_2nd_fit, trend_2nd_residual)
-# axs2[3].axhline(0)
-# axs2[3].set_title("res vs fit")
-# stats.probplot(trend_2nd_residual, dist=stats.norm, plot=axs2[4])
-# axs2[4].set_title("normalQQ for res")
-# plt.show()
+fig2, axs2 = plt.subplots(1, 5, figsize=(15, 3))
+fig2.tight_layout()
+axs2[0].scatter(data_long, data_lat, s=data_soc, c=data_soc)
+axs2[0].set_title("data")
+axs2[1].scatter(data_long, data_lat, s=trend_2nd_fit, c=trend_2nd_fit)
+axs2[1].set_title("fit")
+axs2[2].scatter(data_long, data_lat, s=trend_2nd_residual, c=trend_2nd_residual)
+axs2[2].set_title("res")
+axs2[3].scatter(trend_2nd_fit, trend_2nd_residual)
+axs2[3].axhline(0)
+axs2[3].set_title("res vs fit")
+stats.probplot(trend_2nd_residual, dist=stats.norm, plot=axs2[4])
+axs2[4].set_title("normalQQ for res")
+plt.show()
 
 
 def semi_variogram(data, long, lat):
@@ -138,46 +138,46 @@ def binning(dist, vario, num_bins):
     return bin_middle_u, bin_vario_r
 
 
-# dist_u, vario_r = semi_variogram(trend_2nd_residual, data_long, data_lat)
-# dist_u_d0, vario_r_d0 = directional_semi_variogram(trend_2nd_residual, data_long, data_lat, 0) #right
-# dist_u_d1, vario_r_d1 = directional_semi_variogram(trend_2nd_residual, data_long, data_lat, 1) #left
-# dist_u_d2, vario_r_d2 = directional_semi_variogram(trend_2nd_residual, data_long, data_lat, 2) #up
-# dist_u_d3, vario_r_d3 = directional_semi_variogram(trend_2nd_residual, data_long, data_lat, 3) #down
+dist_u, vario_r = semi_variogram(trend_2nd_residual, data_long, data_lat)
+dist_u_d0, vario_r_d0 = directional_semi_variogram(trend_2nd_residual, data_long, data_lat, 0) #right
+dist_u_d1, vario_r_d1 = directional_semi_variogram(trend_2nd_residual, data_long, data_lat, 1) #left
+dist_u_d2, vario_r_d2 = directional_semi_variogram(trend_2nd_residual, data_long, data_lat, 2) #up
+dist_u_d3, vario_r_d3 = directional_semi_variogram(trend_2nd_residual, data_long, data_lat, 3) #down
 
-# bin_dist_u, bin_vario_r = binning(dist_u, vario_r, 12)
-# bin_dist_u_d0, bin_vario_r_d0 = binning(dist_u_d0, vario_r_d0, 12)
-# bin_dist_u_d1, bin_vario_r_d1 = binning(dist_u_d1, vario_r_d1, 12)
-# bin_dist_u_d2, bin_vario_r_d2 = binning(dist_u_d2, vario_r_d2, 12)
-# bin_dist_u_d3, bin_vario_r_d3 = binning(dist_u_d3, vario_r_d3, 12)
-# print("possible nugget:", bin_vario_r[0])
+bin_dist_u, bin_vario_r = binning(dist_u, vario_r, 12)
+bin_dist_u_d0, bin_vario_r_d0 = binning(dist_u_d0, vario_r_d0, 12)
+bin_dist_u_d1, bin_vario_r_d1 = binning(dist_u_d1, vario_r_d1, 12)
+bin_dist_u_d2, bin_vario_r_d2 = binning(dist_u_d2, vario_r_d2, 12)
+bin_dist_u_d3, bin_vario_r_d3 = binning(dist_u_d3, vario_r_d3, 12)
+print("possible nugget:", bin_vario_r[0])
 
-# fig_vario, axs_vario = plt.subplots(1, 2, figsize=(8, 4))
-# fig_vario.tight_layout()
-# axs_vario[0].scatter(dist_u, vario_r, s=0.5)
-# axs_vario[0].set_title("semivariogram cloud")
-# axs_vario[1].plot(bin_dist_u, bin_vario_r)
-# axs_vario[1].scatter(bin_dist_u, bin_vario_r)
-# axs_vario[1].set_title("semivariogram bin")
-# axs_vario[1].set_ylim(0, axs_vario[1].get_ylim()[1])
-# plt.show()
+fig_vario, axs_vario = plt.subplots(1, 2, figsize=(8, 4))
+fig_vario.tight_layout()
+axs_vario[0].scatter(dist_u, vario_r, s=0.5)
+axs_vario[0].set_title("semivariogram cloud")
+axs_vario[1].plot(bin_dist_u, bin_vario_r)
+axs_vario[1].scatter(bin_dist_u, bin_vario_r)
+axs_vario[1].set_title("semivariogram bin")
+axs_vario[1].set_ylim(0, axs_vario[1].get_ylim()[1])
+plt.show()
 
-# fig_vario_d, axs_vario_d = plt.subplots(1, 5, figsize=(20, 4))
-# fig_vario_d.tight_layout()
-# axs_vario_d[0].scatter(dist_u_d0, vario_r_d0, s=0.5)
-# axs_vario_d[0].set_title("semivariogram cloud, d0")
-# axs_vario_d[1].scatter(dist_u_d1, vario_r_d1, s=0.5)
-# axs_vario_d[1].set_title("semivariogram cloud, d1")
-# axs_vario_d[2].scatter(dist_u_d2, vario_r_d2, s=0.5)
-# axs_vario_d[2].set_title("semivariogram cloud, d2")
-# axs_vario_d[3].scatter(dist_u_d3, vario_r_d3, s=0.5)
-# axs_vario_d[3].set_title("semivariogram cloud, d3")
-# axs_vario_d[4].plot(bin_dist_u_d0, bin_vario_r_d0)
-# axs_vario_d[4].plot(bin_dist_u_d1, bin_vario_r_d1)
-# axs_vario_d[4].plot(bin_dist_u_d2, bin_vario_r_d2)
-# axs_vario_d[4].plot(bin_dist_u_d3, bin_vario_r_d3)
-# axs_vario_d[4].set_title("semivariogram bin")
-# axs_vario_d[4].set_ylim(0, axs_vario_d[4].get_ylim()[1])
-# plt.show()
+fig_vario_d, axs_vario_d = plt.subplots(1, 5, figsize=(20, 4))
+fig_vario_d.tight_layout()
+axs_vario_d[0].scatter(dist_u_d0, vario_r_d0, s=0.5)
+axs_vario_d[0].set_title("semivariogram cloud, d0")
+axs_vario_d[1].scatter(dist_u_d1, vario_r_d1, s=0.5)
+axs_vario_d[1].set_title("semivariogram cloud, d1")
+axs_vario_d[2].scatter(dist_u_d2, vario_r_d2, s=0.5)
+axs_vario_d[2].set_title("semivariogram cloud, d2")
+axs_vario_d[3].scatter(dist_u_d3, vario_r_d3, s=0.5)
+axs_vario_d[3].set_title("semivariogram cloud, d3")
+axs_vario_d[4].plot(bin_dist_u_d0, bin_vario_r_d0)
+axs_vario_d[4].plot(bin_dist_u_d1, bin_vario_r_d1)
+axs_vario_d[4].plot(bin_dist_u_d2, bin_vario_r_d2)
+axs_vario_d[4].plot(bin_dist_u_d3, bin_vario_r_d3)
+axs_vario_d[4].set_title("semivariogram bin")
+axs_vario_d[4].set_ylim(0, axs_vario_d[4].get_ylim()[1])
+plt.show()
 
 
 def minimize_func_base(x, nu_smoothness, bin_dist_u, bin_semivario_r):
@@ -192,42 +192,42 @@ def minimize_func_base(x, nu_smoothness, bin_dist_u, bin_semivario_r):
         squared_sum += ((matern_inst.semi_variogram(u) - r)**2)
     return squared_sum
 
-# minimize_func_v05 = partial(minimize_func_base, nu_smoothness=0.5, bin_dist_u=bin_dist_u, bin_semivario_r=bin_vario_r)
-# optim_result_v05 = optim.minimize(minimize_func_v05, [1,1], method='nelder-mead')
-# print("v05:",optim_result_v05)
-# matern_inst_v05 = Matern(0.5, optim_result_v05.x[0], optim_result_v05.x[1])
+minimize_func_v05 = partial(minimize_func_base, nu_smoothness=0.5, bin_dist_u=bin_dist_u, bin_semivario_r=bin_vario_r)
+optim_result_v05 = optim.minimize(minimize_func_v05, [1,1], method='nelder-mead')
+print("v05:",optim_result_v05)
+matern_inst_v05 = Matern(0.5, optim_result_v05.x[0], optim_result_v05.x[1])
 
-# minimize_func_v10 = partial(minimize_func_base, nu_smoothness=1, bin_dist_u=bin_dist_u, bin_semivario_r=bin_vario_r)
-# optim_result_v10 = optim.minimize(minimize_func_v10, [1,1], method='nelder-mead')
-# print("v10:",optim_result_v10)
-# matern_inst_v10 = Matern(1, optim_result_v10.x[0], optim_result_v10.x[1])
+minimize_func_v10 = partial(minimize_func_base, nu_smoothness=1, bin_dist_u=bin_dist_u, bin_semivario_r=bin_vario_r)
+optim_result_v10 = optim.minimize(minimize_func_v10, [1,1], method='nelder-mead')
+print("v10:",optim_result_v10)
+matern_inst_v10 = Matern(1, optim_result_v10.x[0], optim_result_v10.x[1])
 
 
-# minimize_func_v15 = partial(minimize_func_base, nu_smoothness=1.5, bin_dist_u=bin_dist_u, bin_semivario_r=bin_vario_r)
-# optim_result_v15 = optim.minimize(minimize_func_v15, [1,1], method='nelder-mead')
-# print("v15:",optim_result_v15)
-# matern_inst_v15 = Matern(1.5, optim_result_v15.x[0], optim_result_v15.x[1])
+minimize_func_v15 = partial(minimize_func_base, nu_smoothness=1.5, bin_dist_u=bin_dist_u, bin_semivario_r=bin_vario_r)
+optim_result_v15 = optim.minimize(minimize_func_v15, [1,1], method='nelder-mead')
+print("v15:",optim_result_v15)
+matern_inst_v15 = Matern(1.5, optim_result_v15.x[0], optim_result_v15.x[1])
 
-# minimize_func_v25 = partial(minimize_func_base, nu_smoothness=2.5, bin_dist_u=bin_dist_u, bin_semivario_r=bin_vario_r)
-# optim_result_v25 = optim.minimize(minimize_func_v25, [1,1], method='nelder-mead')
-# print("v25:",optim_result_v25)
-# matern_inst_v25 = Matern(2.5, optim_result_v25.x[0], optim_result_v25.x[1])
+minimize_func_v25 = partial(minimize_func_base, nu_smoothness=2.5, bin_dist_u=bin_dist_u, bin_semivario_r=bin_vario_r)
+optim_result_v25 = optim.minimize(minimize_func_v25, [1,1], method='nelder-mead')
+print("v25:",optim_result_v25)
+matern_inst_v25 = Matern(2.5, optim_result_v25.x[0], optim_result_v25.x[1])
 
-# fig_vario_vs, axs_vario_vs = plt.subplots(1, 4, figsize=(4*4, 4))
-# fig_vario_vs.tight_layout()
-# axs_vario_vs[0].scatter(bin_dist_u, bin_vario_r)
-# axs_vario_vs[0].set_title("v=0.5")
-# matern_inst_v05.plot_semi_variogram(0, axs_vario_vs[0].get_xlim()[1], 0.01, plt_axis=axs_vario_vs[0], show=False)
-# axs_vario_vs[1].scatter(bin_dist_u, bin_vario_r)
-# axs_vario_vs[1].set_title("v=1")
-# matern_inst_v10.plot_semi_variogram(0, axs_vario_vs[1].get_xlim()[1], 0.01, plt_axis=axs_vario_vs[1], show=False)
-# axs_vario_vs[2].scatter(bin_dist_u, bin_vario_r)
-# axs_vario_vs[2].set_title("v=1.5")
-# matern_inst_v15.plot_semi_variogram(0, axs_vario_vs[2].get_xlim()[1], 0.01, plt_axis=axs_vario_vs[2], show=False)
-# axs_vario_vs[3].scatter(bin_dist_u, bin_vario_r)
-# axs_vario_vs[3].set_title("v=2.5")
-# matern_inst_v25.plot_semi_variogram(0, axs_vario_vs[3].get_xlim()[1], 0.01, plt_axis=axs_vario_vs[3], show=False)
-# plt.show()
+fig_vario_vs, axs_vario_vs = plt.subplots(1, 4, figsize=(4*4, 4))
+fig_vario_vs.tight_layout()
+axs_vario_vs[0].scatter(bin_dist_u, bin_vario_r)
+axs_vario_vs[0].set_title("v=0.5")
+matern_inst_v05.plot_semi_variogram(0, axs_vario_vs[0].get_xlim()[1], 0.01, plt_axis=axs_vario_vs[0], show=False)
+axs_vario_vs[1].scatter(bin_dist_u, bin_vario_r)
+axs_vario_vs[1].set_title("v=1")
+matern_inst_v10.plot_semi_variogram(0, axs_vario_vs[1].get_xlim()[1], 0.01, plt_axis=axs_vario_vs[1], show=False)
+axs_vario_vs[2].scatter(bin_dist_u, bin_vario_r)
+axs_vario_vs[2].set_title("v=1.5")
+matern_inst_v15.plot_semi_variogram(0, axs_vario_vs[2].get_xlim()[1], 0.01, plt_axis=axs_vario_vs[2], show=False)
+axs_vario_vs[3].scatter(bin_dist_u, bin_vario_r)
+axs_vario_vs[3].set_title("v=2.5")
+matern_inst_v25.plot_semi_variogram(0, axs_vario_vs[3].get_xlim()[1], 0.01, plt_axis=axs_vario_vs[3], show=False)
+plt.show()
 
 
 
@@ -283,38 +283,38 @@ def gen_contour_level_matrix_for_likelihood(meshgrid_sigma2, meshgrid_phi, nu_sm
             sigma2 = meshgrid_sigma2[i,j]
             phi = meshgrid_phi[i,j]
             val = pmle_optim_object([sigma2, phi], nu_smoothness)
-            print(i, j, sigma2, phi, val)
+            # print(i, j, sigma2, phi, val)
             val_on_grid[i,j] = val
     return val_on_grid
 
 
-# grid_sigma2 = np.linspace(180, 400, 10)
-# grid_phi = np.linspace(0.04, 0.15, 10)
-# meshgrid_sigma2, meshgrid_phi = np.meshgrid(grid_sigma2, grid_phi)
-# contour_level_mat = gen_contour_level_matrix_for_likelihood(meshgrid_sigma2, meshgrid_phi, nu_smoothness=0.5)
-# plt.contour(grid_sigma2, grid_phi, contour_level_mat, levels=10)
-# plt.show()
+grid_sigma2 = np.linspace(180, 400, 10)
+grid_phi = np.linspace(0.04, 0.15, 10)
+meshgrid_sigma2, meshgrid_phi = np.meshgrid(grid_sigma2, grid_phi)
+contour_level_mat = gen_contour_level_matrix_for_likelihood(meshgrid_sigma2, meshgrid_phi, nu_smoothness=0.5)
+plt.contour(grid_sigma2, grid_phi, contour_level_mat, levels=10)
+plt.show()
 
-# grid_sigma2 = np.linspace(150, 350, 10)
-# grid_phi = np.linspace(0.009, 0.021, 10)
-# meshgrid_sigma2, meshgrid_phi = np.meshgrid(grid_sigma2, grid_phi)
-# contour_level_mat = gen_contour_level_matrix_for_likelihood(meshgrid_sigma2, meshgrid_phi, nu_smoothness=1)
-# plt.contour(grid_sigma2, grid_phi, contour_level_mat, levels=10)
-# plt.show()
+grid_sigma2 = np.linspace(150, 350, 10)
+grid_phi = np.linspace(0.009, 0.021, 10)
+meshgrid_sigma2, meshgrid_phi = np.meshgrid(grid_sigma2, grid_phi)
+contour_level_mat = gen_contour_level_matrix_for_likelihood(meshgrid_sigma2, meshgrid_phi, nu_smoothness=1)
+plt.contour(grid_sigma2, grid_phi, contour_level_mat, levels=10)
+plt.show()
 
-# grid_sigma2 = np.linspace(120, 370, 10)
-# grid_phi = np.linspace(0.004, 0.013, 10)
-# meshgrid_sigma2, meshgrid_phi = np.meshgrid(grid_sigma2, grid_phi)
-# contour_level_mat = gen_contour_level_matrix_for_likelihood(meshgrid_sigma2, meshgrid_phi, nu_smoothness=1.5)
-# plt.contour(grid_sigma2, grid_phi, contour_level_mat, levels=10)
-# plt.show()
+grid_sigma2 = np.linspace(120, 370, 10)
+grid_phi = np.linspace(0.004, 0.013, 10)
+meshgrid_sigma2, meshgrid_phi = np.meshgrid(grid_sigma2, grid_phi)
+contour_level_mat = gen_contour_level_matrix_for_likelihood(meshgrid_sigma2, meshgrid_phi, nu_smoothness=1.5)
+plt.contour(grid_sigma2, grid_phi, contour_level_mat, levels=10)
+plt.show()
 
-# grid_sigma2 = np.linspace(120, 370, 10)
-# grid_phi = np.linspace(0.001, 0.008, 10)
-# meshgrid_sigma2, meshgrid_phi = np.meshgrid(grid_sigma2, grid_phi)
-# contour_level_mat = gen_contour_level_matrix_for_likelihood(meshgrid_sigma2, meshgrid_phi, nu_smoothness=2.5)
-# plt.contour(grid_sigma2, grid_phi, contour_level_mat, levels=10)
-# plt.show()
+grid_sigma2 = np.linspace(120, 370, 10)
+grid_phi = np.linspace(0.001, 0.008, 10)
+meshgrid_sigma2, meshgrid_phi = np.meshgrid(grid_sigma2, grid_phi)
+contour_level_mat = gen_contour_level_matrix_for_likelihood(meshgrid_sigma2, meshgrid_phi, nu_smoothness=2.5)
+plt.contour(grid_sigma2, grid_phi, contour_level_mat, levels=10)
+plt.show()
 
 
 
@@ -345,22 +345,26 @@ def marginal_likelihood(range_phi, smoothness_nu, trend_design_X, resp_Y, data_l
 
 mmle_optim_object = partial(marginal_likelihood, trend_design_X=design_2nd_X, resp_Y=resp_Y, data_long=data_long, data_lat=data_lat, nugget=0)
 
-# grid_phi = np.linspace(0.01, 0.2, 20)
-# level_list_marginal = [mmle_optim_object([p], 0.5) for p in grid_phi]
-# plt.plot(grid_phi, level_list_marginal)
-# plt.show()
+grid_phi = np.linspace(0.01, 0.2, 20)
+level_list_marginal = [mmle_optim_object([p], 0.5) for p in grid_phi]
+print("maximum at:", grid_phi[np.argmax(level_list_marginal)])
+plt.plot(grid_phi, level_list_marginal)
+plt.show()
 
-# grid_phi = np.linspace(0.001, 0.02, 20)
-# level_list_marginal = [mmle_optim_object([p], 1) for p in grid_phi]
-# plt.plot(grid_phi, level_list_marginal)
-# plt.show()
+grid_phi = np.linspace(0.001, 0.02, 20)
+level_list_marginal = [mmle_optim_object([p], 1) for p in grid_phi]
+print("maximum at:", grid_phi[np.argmax(level_list_marginal)])
+plt.plot(grid_phi, level_list_marginal)
+plt.show()
 
-# grid_phi = np.linspace(0.001, 0.01, 20)
-# level_list_marginal = [mmle_optim_object([p], 1.5) for p in grid_phi]
-# plt.plot(grid_phi, level_list_marginal)
-# plt.show()
+grid_phi = np.linspace(0.001, 0.01, 20)
+level_list_marginal = [mmle_optim_object([p], 1.5) for p in grid_phi]
+print("maximum at:", grid_phi[np.argmax(level_list_marginal)])
+plt.plot(grid_phi, level_list_marginal)
+plt.show()
 
-# grid_phi = np.linspace(0.001, 0.01, 20)
-# level_list_marginal = [mmle_optim_object([p], 2.5) for p in grid_phi]
-# plt.plot(grid_phi, level_list_marginal)
-# plt.show()
+grid_phi = np.linspace(0.001, 0.01, 20)
+level_list_marginal = [mmle_optim_object([p], 2.5) for p in grid_phi]
+print("maximum at:", grid_phi[np.argmax(level_list_marginal)])
+plt.plot(grid_phi, level_list_marginal)
+plt.show()
