@@ -14,7 +14,7 @@ def OLS_by_QR(design_X, resp_Y):
     sum_of_squared_error = sum(QtY[beta_dim:]**2)
     return beta_fit, sum_of_squared_error
 
-def GLS_by_cholesky(design_X, resp_Y, cov_mat_Sigma):
+def GLS_by_cholesky(design_X, resp_Y, cov_mat_Sigma, return_F=False):
     # cov_mat_Sigma = LLt
     L = np.linalg.cholesky(cov_mat_Sigma)
     log_det_cov_mat_Sigma = np.sum(np.log(np.diag(L)))*2
@@ -24,7 +24,10 @@ def GLS_by_cholesky(design_X, resp_Y, cov_mat_Sigma):
     #now, Z = F*beta + error(with cov=I)
     
     beta_fit, sum_of_squared_error = OLS_by_QR(F, Z)
-    return beta_fit, sum_of_squared_error, log_det_cov_mat_Sigma
+    if return_F:
+        return beta_fit, sum_of_squared_error, log_det_cov_mat_Sigma, F
+    else:
+        return beta_fit, sum_of_squared_error, log_det_cov_mat_Sigma
 
 if __name__=="__main__":
     data_soc = []

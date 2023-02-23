@@ -53,7 +53,8 @@ class IsotropicCovBase:
         dist2 = 0
         for s1, s2 in zip(loc1, loc2):
             dist2 += (s1-s2)**2
-        return dist2**0.5
+        dist = dist2**0.5
+        return dist
 
     def cov_matrix(self, points, topology="Euclidean"):
         cov_mat = []
@@ -66,7 +67,7 @@ class IsotropicCovBase:
                 else:
                     raise ValueError("now, only Euclidean topology can be used.")
                 cov_mat[-1].append(self.covariance_function(dist))
-        return np.array(cov_mat)
+        return np.array(cov_mat, dtype="float64")
 
     def sampler(self, points, topology="Euclidean"):
         cov_mat = self.cov_matrix(points, topology)

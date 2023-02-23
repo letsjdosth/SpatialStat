@@ -61,7 +61,8 @@ def binning(dist, vario, num_bins):
                 break
         if not add_flag:
             bin_vario_list[-1].append(r)
-            
+    
+    # print(bin_vario_list[-1])
     bin_vario_r = [mean(x) for x in bin_vario_list]
     # print(bin_vario_r)
     return bin_middle_u, bin_vario_r
