@@ -29,7 +29,7 @@ def GLS_by_cholesky(design_X, resp_Y, cov_mat_Sigma, return_F=False):
     else:
         return beta_fit, sum_of_squared_error, log_det_cov_mat_Sigma
 
-def sym_defpos_matrix_inversion_cholesky(symmetric_pos_def_matrix):
+def sym_defpos_matrix_inversion_cholesky(symmetric_pos_def_matrix) -> tuple[np.ndarray, float]:
     #caution: this function does not check the symmetry.
 
     L = np.linalg.cholesky(symmetric_pos_def_matrix) # S = LL' => S_inv = inv(LL') = inv(L')@inv(L) = inv(L)'@inv(L)

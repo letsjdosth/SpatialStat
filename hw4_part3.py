@@ -112,7 +112,7 @@ class FullBayes_UsingSocSd(MCMC_Gibbs):
             post_val += ((-self.hyper_sigma2S_alpha-1)*np.log(sigma2_S) -self.hyper_sigma2S_beta/sigma2_S)
             return post_val
 
-        def unif_proposal_log_pdf(from_smpl, to_smpl, window=10):
+        def unif_proposal_log_pdf(from_smpl, to_smpl, window=30):
             from_smpl = from_smpl[0]
             to_smpl = to_smpl[0]
             applied_window = [max(0, from_smpl-window/2), from_smpl+window/2]
@@ -124,7 +124,7 @@ class FullBayes_UsingSocSd(MCMC_Gibbs):
                 # return 1/applied_window_len
                 return -np.log(applied_window_len)
 
-        def unif_proposal_sampler(from_smpl, window=10):
+        def unif_proposal_sampler(from_smpl, window=30):
             from_smpl = from_smpl[0]
             applied_window = [max(0, from_smpl-window/2), from_smpl+window/2]
             new = [self.np_random_inst.uniform(applied_window[0], applied_window[1])]
@@ -217,7 +217,7 @@ class FullBayes_UsingSocSd(MCMC_Gibbs):
 if __name__ == "__main__":
     #  0     1         2    3
     # [beta, sigma2_S, phi, v]
-    bayes_nugget_inst = FullBayes_UsingSocSd([np.array([0,0,0,0,0,0]), 100, 0.01, 1],
+    bayes_nugget_inst = FullBayes_UsingSocSd([np.array([0,0,0,0,0,0]), 110, 0.01, 1],
                                         design_mat_degree1_D1l, data_soil_carbon, data_soil_carbon_sd, data_long_x, data_lat_y,
                                         (0.01, 0.01), (0.01, 0.01), 20230223)
     bayes_nugget_inst.generate_samples(2000, first_time_est=10, print_iter_cycle=20)
@@ -228,7 +228,7 @@ if __name__ == "__main__":
     samples_full = [x+y for x, y in zip(samples_beta, samples_others)]
 
     mcmc_diag_inst.set_mc_samples_from_list(samples_full)
-    mcmc_diag_inst.write_samples("hw4_bayes_nugget_samples.csv")
+    mcmc_diag_inst.write_samples("hw4_bayes_nugget_samples")
     #                                  0        1        2        3        4        5        6           7      8 
     mcmc_diag_inst.set_variable_names(["beta0", "beta1", "beta2", "beta3", "beta4", "beta5", "sigma2_S", "phi", "v"])
     mcmc_diag_inst.show_traceplot((3,3), [0,1,2,3,4,5,6,7,8])

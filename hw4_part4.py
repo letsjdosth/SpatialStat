@@ -110,7 +110,7 @@ if __name__ == "__main__":
     samples_full = [x+y+z for x, y, z in zip(samples_beta, samples_others, samples_signal_nugget)]
 
     mcmc_diag_inst.set_mc_samples_from_list(samples_full)
-    mcmc_diag_inst.write_samples("hw4_map_phi_samples.csv")
+    mcmc_diag_inst.write_samples("hw4_map_phi_samples")
     #                                  0        1        2        3        4        5        6           7        8      9    10          11
     mcmc_diag_inst.set_variable_names(["beta0", "beta1", "beta2", "beta3", "beta4", "beta5", "sigma2_T", "theta", "phi", "v", "sigma2_S", "tau2"])
     mcmc_diag_inst.show_traceplot((6,2), [0,1,2,3,4,5,6,7,8,9])

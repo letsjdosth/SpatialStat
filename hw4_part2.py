@@ -240,7 +240,7 @@ class FullBayes(MCMC_Gibbs):
 if __name__ == "__main__":
     #  0     1         2      3    4
     # [beta, sigma2_T, theta, phi, v]
-    fullbayes_inst = FullBayes([np.array([0,0,0,0,0,0]), 1, 0.5, 0.1, 1], design_mat_degree1_D1l, data_soil_carbon, data_long_x, data_lat_y,
+    fullbayes_inst = FullBayes([np.array([98, 0.93, 0.3, -7, -33, -36]), 152, 0.7, 0.13, 0.5], design_mat_degree1_D1l, data_soil_carbon, data_long_x, data_lat_y,
                             (0.01, 0.01), (1,5), (0.01, 0.01), 20230223)
     fullbayes_inst.generate_samples(2000, first_time_est=10, print_iter_cycle=20)
 
@@ -251,8 +251,10 @@ if __name__ == "__main__":
     samples_full = [x+y+z for x, y, z in zip(samples_beta, samples_others, samples_signal_nugget)]
 
     mcmc_diag_inst.set_mc_samples_from_list(samples_full)
-    mcmc_diag_inst.write_samples("hw4_fullbayes_samples.csv")
+    mcmc_diag_inst.write_samples("hw4_fullbayes_samples_t2")
     #                                  0        1        2        3        4        5        6           7        8      9    10          11
     mcmc_diag_inst.set_variable_names(["beta0", "beta1", "beta2", "beta3", "beta4", "beta5", "sigma2_T", "theta", "phi", "v", "sigma2_S", "tau2"])
     mcmc_diag_inst.show_traceplot((6,2), [0,1,2,3,4,5,6,7,8,9])
     mcmc_diag_inst.show_hist((4,3))
+
+
