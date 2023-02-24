@@ -6,7 +6,7 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 
-from spatial_util.least_squares import OLS_by_QR, GLS_by_cholesky
+from spatial_util.least_squares import OLS_by_QR, GLS_by_cholesky, sym_defpos_matrix_inversion_cholesky
 from spatial_util.cov_functions import Matern
 
 from pyBayes.MCMC_Core import MCMC_Gibbs, MCMC_MH, MCMC_Diag
@@ -86,7 +86,8 @@ class FullBayes(MCMC_Gibbs):
         beta_fit, sum_of_squared_error, log_det_cov_mat_Sigma, F = GLS_by_cholesky(self.design_D, self.response_Z, cov_mat, return_F=True)
 
         nvm_mean = beta_fit
-        nvm_cov = np.linalg.inv(np.transpose(F)@F)
+        # nvm_cov = np.linalg.inv(np.transpose(F)@F)
+        nvm_cov, _ = sym_defpos_matrix_inversion_cholesky(np.transpose(F)@F)
         new_beta = self.np_random_inst.multivariate_normal(nvm_mean, nvm_cov)
         new_sample[0] = np.array(new_beta, dtype="float64")
         return new_sample
@@ -99,10 +100,12 @@ class FullBayes(MCMC_Gibbs):
         corr_inst = Matern(last_param[4], 1, last_param[3])
         corr_mat = corr_inst.cov_matrix(self.location)*last_param[2] + (1-last_param[2])*np.eye(self.N)
         _, sum_of_squared_error, log_det_cov_mat, _ = GLS_by_cholesky(self.design_D, self.response_Z, corr_mat, return_F=True)
+        inv_corr_mat, _ = sym_defpos_matrix_inversion_cholesky(corr_mat)
 
         gamma_shape = self.hyper_sigma2T_alpha + self.N/2
         fit_err = self.response_Z - self.design_D@last_param[0]
-        gamma_rate = self.hyper_sigma2T_beta + 0.5 * np.transpose(fit_err)@np.linalg.inv(corr_mat)@fit_err
+        # gamma_rate = self.hyper_sigma2T_beta + 0.5 * np.transpose(fit_err)@np.linalg.inv(corr_mat)@fit_err
+        gamma_rate = self.hyper_sigma2T_beta + 0.5 * np.transpose(fit_err)@inv_corr_mat@fit_err
 
         new_sigma2_T = 1/self.np_random_inst.gamma(gamma_shape, 1/gamma_rate)
         new_sample[1] = new_sigma2_T
@@ -119,8 +122,9 @@ class FullBayes(MCMC_Gibbs):
             theta = theta[0]
             corr_inst = Matern(last_param[4], 1, last_param[3])
             cov_mat = last_param[1] * (corr_inst.cov_matrix(self.location)*theta + (1-theta)*np.eye(self.N))
-            _, logdet = np.linalg.slogdet(cov_mat)
-            inv_cov_mat = np.linalg.inv(cov_mat)
+            # _, logdet = np.linalg.slogdet(cov_mat)
+            # inv_cov_mat = np.linalg.inv(cov_mat)
+            inv_cov_mat, logdet = sym_defpos_matrix_inversion_cholesky(cov_mat)
 
             fit_err = self.response_Z - self.design_D@last_param[0]
             
@@ -162,8 +166,9 @@ class FullBayes(MCMC_Gibbs):
             phi = phi[0]
             corr_inst = Matern(last_param[4], 1, phi)
             cov_mat = (corr_inst.cov_matrix(self.location)*last_param[2] + (1-last_param[2])*np.eye(self.N))*last_param[1]
-            _, logdet = np.linalg.slogdet(cov_mat)
-            inv_cov_mat = np.linalg.inv(cov_mat)
+            # _, logdet = np.linalg.slogdet(cov_mat)
+            # inv_cov_mat = np.linalg.inv(cov_mat)
+            inv_cov_mat, logdet = sym_defpos_matrix_inversion_cholesky(cov_mat)
 
             fit_err = self.response_Z - self.design_D@last_param[0]
             
@@ -205,8 +210,9 @@ class FullBayes(MCMC_Gibbs):
             v = v[0]
             corr_inst = Matern(v, 1, last_param[3])
             cov_mat = last_param[1] * (corr_inst.cov_matrix(self.location)*last_param[2] + (1-last_param[2])*np.eye(self.N))
-            _, logdet = np.linalg.slogdet(cov_mat)
-            inv_cov_mat = np.linalg.inv(cov_mat)
+            # _, logdet = np.linalg.slogdet(cov_mat)
+            # inv_cov_mat = np.linalg.inv(cov_mat)
+            inv_cov_mat, logdet = sym_defpos_matrix_inversion_cholesky(cov_mat)
 
             fit_err = self.response_Z - self.design_D@last_param[0]
             
@@ -227,24 +233,26 @@ class FullBayes(MCMC_Gibbs):
         return new_sample
     
     def full_conditional_sampler_fixed_v(self, last_param):
-        new_sample = self.deep_copier(last_param)
+        new_sample = last_param
         return new_sample
     
-#  0     1         2      3    4
-# [beta, sigma2_T, theta, phi, v]
-fullbayes_inst = FullBayes([np.array([0,0,0,0,0,0]), 1, 0.5, 0.1, 1], design_mat_degree1_D1l, data_soil_carbon, data_long_x, data_lat_y,
-                           (0.01, 0.01), (1,5), (0.01, 0.01), 20230223)
-fullbayes_inst.generate_samples(2000, first_time_est=10, print_iter_cycle=20)
 
-mcmc_diag_inst = MCMC_Diag()
-samples_beta = [sample[0].tolist() for sample in fullbayes_inst.MC_sample]
-samples_others = [sample[1:] for sample in fullbayes_inst.MC_sample]
-samples_signal_nugget = [[sample[1]*sample[2], sample[1]*(1-sample[2])] for sample in fullbayes_inst.MC_sample]
-samples_full = [x+y+z for x, y, z in zip(samples_beta, samples_others, samples_signal_nugget)]
+if __name__ == "__main__":
+    #  0     1         2      3    4
+    # [beta, sigma2_T, theta, phi, v]
+    fullbayes_inst = FullBayes([np.array([0,0,0,0,0,0]), 1, 0.5, 0.1, 1], design_mat_degree1_D1l, data_soil_carbon, data_long_x, data_lat_y,
+                            (0.01, 0.01), (1,5), (0.01, 0.01), 20230223)
+    fullbayes_inst.generate_samples(2000, first_time_est=10, print_iter_cycle=20)
 
-mcmc_diag_inst.set_mc_samples_from_list(samples_full)
-mcmc_diag_inst.write_samples("fullbayes_samples.csv")
-#                                  0        1        2        3        4        5        6           7        8      9    10          11
-mcmc_diag_inst.set_variable_names(["beta0", "beta1", "beta2", "beta3", "beta4", "beta5", "sigma2_T", "theta", "phi", "v", "sigma2_S", "tau2"])
-mcmc_diag_inst.show_traceplot((6,2), [0,1,2,3,4,5,6,7,8,9])
-mcmc_diag_inst.show_hist((4,3))
+    mcmc_diag_inst = MCMC_Diag()
+    samples_beta = [sample[0].tolist() for sample in fullbayes_inst.MC_sample]
+    samples_others = [sample[1:] for sample in fullbayes_inst.MC_sample]
+    samples_signal_nugget = [[sample[1]*sample[2], sample[1]*(1-sample[2])] for sample in fullbayes_inst.MC_sample]
+    samples_full = [x+y+z for x, y, z in zip(samples_beta, samples_others, samples_signal_nugget)]
+
+    mcmc_diag_inst.set_mc_samples_from_list(samples_full)
+    mcmc_diag_inst.write_samples("hw4_fullbayes_samples.csv")
+    #                                  0        1        2        3        4        5        6           7        8      9    10          11
+    mcmc_diag_inst.set_variable_names(["beta0", "beta1", "beta2", "beta3", "beta4", "beta5", "sigma2_T", "theta", "phi", "v", "sigma2_S", "tau2"])
+    mcmc_diag_inst.show_traceplot((6,2), [0,1,2,3,4,5,6,7,8,9])
+    mcmc_diag_inst.show_hist((4,3))

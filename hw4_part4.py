@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import scipy.linalg
 import scipy.optimize as optim
 
-from spatial_util.least_squares import OLS_by_QR, GLS_by_cholesky
+from spatial_util.least_squares import OLS_by_QR, GLS_by_cholesky, sym_defpos_matrix_inversion_cholesky
 from spatial_util.cov_functions import Matern
 
 from pyBayes.MCMC_Core import MCMC_Gibbs, MCMC_MH, MCMC_Diag
@@ -67,9 +67,9 @@ def marginal_likelihood(range_phi, smoothness_nu, trend_design_X, resp_Y, data_p
     #now, Z = F*beta + error(with cov=I)
     
     beta_fit, S2 = OLS_by_QR(F, Z)
-    DtVinvD = np.transpose(F)@F
-
-    m_lik = -0.5*log_det_matern_cov -0.5*np.linalg.slogdet(DtVinvD)[1] -0.5*(n_data-len(beta_fit))*np.log(S2)
+    _, logdet_DtVinvD = sym_defpos_matrix_inversion_cholesky(np.transpose(F)@F)
+    
+    m_lik = -0.5*log_det_matern_cov -0.5*logdet_DtVinvD -0.5*(n_data-len(beta_fit))*np.log(S2)
     return m_lik
 
 
@@ -90,28 +90,28 @@ class FitWith_MAPphi(FullBayes):
         def neg_marginal_posterior_optim_object(phi):
             return (-1)*(now_marginal_likelihood(phi) -self.hyper_phi_beta/phi -(self.hyper_phi_alpha+1)*np.log(phi)) #prior
 
-        optim_result = optim.minimize(neg_marginal_posterior_optim_object, 0.1, method='nelder-mead', bounds=[(0,10)])
-        print(optim_result) #for test
+        optim_result = optim.minimize(neg_marginal_posterior_optim_object, last_param[3], method='nelder-mead', bounds=[(0,10)], options={"maxiter":2})
+        # print(optim_result) #for test
         new_phi = optim_result.x[0]
         new_sample[3] = new_phi
         return new_sample
 
+if __name__ == "__main__":
+    #  0     1         2      3    4
+    # [beta, sigma2_T, theta, phi, v]
+    map_phi_inst = FitWith_MAPphi([np.array([0,0,0,0,0,0]), 100, 0.5, 0.01, 1], design_mat_degree1_D1l, data_soil_carbon, data_long_x, data_lat_y,
+                            (0.01, 0.01), (1,5), (0.01, 0.01), 20230223)
+    map_phi_inst.generate_samples(2000, first_time_est=10, print_iter_cycle=20)
 
-#  0     1         2      3    4
-# [beta, sigma2_T, theta, phi, v]
-map_phi_inst = FitWith_MAPphi([np.array([0,0,0,0,0,0]), 1, 0.5, 0.1, 1], design_mat_degree1_D1l, data_soil_carbon, data_long_x, data_lat_y,
-                           (0.01, 0.01), (1,5), (0.01, 0.01), 20230223)
-map_phi_inst.generate_samples(2000, first_time_est=10, print_iter_cycle=20)
+    mcmc_diag_inst = MCMC_Diag()
+    samples_beta = [sample[0].tolist() for sample in map_phi_inst.MC_sample]
+    samples_others = [sample[1:] for sample in map_phi_inst.MC_sample]
+    samples_signal_nugget = [[sample[1]*sample[2], sample[1]*(1-sample[2])] for sample in map_phi_inst.MC_sample]
+    samples_full = [x+y+z for x, y, z in zip(samples_beta, samples_others, samples_signal_nugget)]
 
-mcmc_diag_inst = MCMC_Diag()
-samples_beta = [sample[0].tolist() for sample in map_phi_inst.MC_sample]
-samples_others = [sample[1:] for sample in map_phi_inst.MC_sample]
-samples_signal_nugget = [[sample[1]*sample[2], sample[1]*(1-sample[2])] for sample in map_phi_inst.MC_sample]
-samples_full = [x+y+z for x, y, z in zip(samples_beta, samples_others, samples_signal_nugget)]
-
-mcmc_diag_inst.set_mc_samples_from_list(samples_full)
-mcmc_diag_inst.write_samples("map_phi_samples.csv")
-#                                  0        1        2        3        4        5        6           7        8      9    10          11
-mcmc_diag_inst.set_variable_names(["beta0", "beta1", "beta2", "beta3", "beta4", "beta5", "sigma2_T", "theta", "phi", "v", "sigma2_S", "tau2"])
-mcmc_diag_inst.show_traceplot((6,2), [0,1,2,3,4,5,6,7,8,9])
-mcmc_diag_inst.show_hist((4,3))
+    mcmc_diag_inst.set_mc_samples_from_list(samples_full)
+    mcmc_diag_inst.write_samples("hw4_map_phi_samples.csv")
+    #                                  0        1        2        3        4        5        6           7        8      9    10          11
+    mcmc_diag_inst.set_variable_names(["beta0", "beta1", "beta2", "beta3", "beta4", "beta5", "sigma2_T", "theta", "phi", "v", "sigma2_S", "tau2"])
+    mcmc_diag_inst.show_traceplot((6,2), [0,1,2,3,4,5,6,7,8,9])
+    mcmc_diag_inst.show_hist((4,3))

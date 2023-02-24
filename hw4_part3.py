@@ -6,7 +6,7 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 
-from spatial_util.least_squares import OLS_by_QR, GLS_by_cholesky
+from spatial_util.least_squares import OLS_by_QR, GLS_by_cholesky, sym_defpos_matrix_inversion_cholesky
 from spatial_util.cov_functions import Matern
 
 from pyBayes.MCMC_Core import MCMC_Gibbs, MCMC_MH, MCMC_Diag
@@ -85,7 +85,8 @@ class FullBayes_UsingSocSd(MCMC_Gibbs):
         beta_fit, sum_of_squared_error, log_det_cov_mat_Sigma, F = GLS_by_cholesky(self.design_D, self.response_Z, cov_mat, return_F=True)
 
         nvm_mean = beta_fit
-        nvm_cov = np.linalg.inv(np.transpose(F)@F)
+        # nvm_cov = np.linalg.inv(np.transpose(F)@F)
+        nvm_cov, _ = sym_defpos_matrix_inversion_cholesky(np.transpose(F)@F)
         new_beta = self.np_random_inst.multivariate_normal(nvm_mean, nvm_cov)
         new_sample[0] = np.array(new_beta, dtype="float64")
         return new_sample
@@ -102,13 +103,16 @@ class FullBayes_UsingSocSd(MCMC_Gibbs):
             cov_mat = covS_inst.cov_matrix(self.location) + self.nugget_mat
             
             fit_err = self.response_Z - self.design_D@last_param[0]
-            _, logdet = np.linalg.slogdet(cov_mat)
+            # _, logdet = np.linalg.slogdet(cov_mat)
 
-            post_val = -0.5*logdet -0.5*np.transpose(fit_err)@np.linalg.inv(cov_mat)@fit_err
+            # post_val = -0.5*logdet -0.5*np.transpose(fit_err)@np.linalg.inv(cov_mat)@fit_err
+            
+            inv_cov_mat, logdet = sym_defpos_matrix_inversion_cholesky(cov_mat)
+            post_val = -0.5*logdet -0.5*np.transpose(fit_err)@inv_cov_mat@fit_err
             post_val += ((-self.hyper_sigma2S_alpha-1)*np.log(sigma2_S) -self.hyper_sigma2S_beta/sigma2_S)
             return post_val
 
-        def unif_proposal_log_pdf(from_smpl, to_smpl, window=1):
+        def unif_proposal_log_pdf(from_smpl, to_smpl, window=10):
             from_smpl = from_smpl[0]
             to_smpl = to_smpl[0]
             applied_window = [max(0, from_smpl-window/2), from_smpl+window/2]
@@ -120,7 +124,7 @@ class FullBayes_UsingSocSd(MCMC_Gibbs):
                 # return 1/applied_window_len
                 return -np.log(applied_window_len)
 
-        def unif_proposal_sampler(from_smpl, window=1):
+        def unif_proposal_sampler(from_smpl, window=10):
             from_smpl = from_smpl[0]
             applied_window = [max(0, from_smpl-window/2), from_smpl+window/2]
             new = [self.np_random_inst.uniform(applied_window[0], applied_window[1])]
@@ -143,13 +147,15 @@ class FullBayes_UsingSocSd(MCMC_Gibbs):
             covS_inst = Matern(last_param[3], last_param[1], phi)
             cov_mat = covS_inst.cov_matrix(self.location) + self.nugget_mat
             fit_err = self.response_Z - self.design_D@last_param[0]
-            _, logdet = np.linalg.slogdet(cov_mat)
+            # _, logdet = np.linalg.slogdet(cov_mat)
 
-            post_val = -0.5*logdet -0.5*np.transpose(fit_err)@np.linalg.inv(cov_mat)@fit_err
+            # post_val = -0.5*logdet -0.5*np.transpose(fit_err)@np.linalg.inv(cov_mat)@fit_err
+            inv_cov_mat, logdet = sym_defpos_matrix_inversion_cholesky(cov_mat)
+            post_val = -0.5*logdet -0.5*np.transpose(fit_err)@inv_cov_mat@fit_err
             post_val += ((-self.hyper_phi_alpha-1)*np.log(phi)-self.hyper_phi_beta/phi)
             return post_val
         
-        def unif_proposal_log_pdf(from_smpl, to_smpl, window=1):
+        def unif_proposal_log_pdf(from_smpl, to_smpl, window=0.01):
             from_smpl = from_smpl[0]
             to_smpl = to_smpl[0]
             applied_window = [max(0, from_smpl-window/2), from_smpl+window/2]
@@ -161,7 +167,7 @@ class FullBayes_UsingSocSd(MCMC_Gibbs):
                 # return 1/applied_window_len
                 return -np.log(applied_window_len)
 
-        def unif_proposal_sampler(from_smpl, window=1):
+        def unif_proposal_sampler(from_smpl, window=0.01):
             from_smpl = from_smpl[0]
             applied_window = [max(0, from_smpl-window/2), from_smpl+window/2]
             new = [self.np_random_inst.uniform(applied_window[0], applied_window[1])]
@@ -184,9 +190,11 @@ class FullBayes_UsingSocSd(MCMC_Gibbs):
             covS_inst = Matern(v, last_param[1], last_param[2])
             cov_mat = covS_inst.cov_matrix(self.location) + self.nugget_mat
             fit_err = self.response_Z - self.design_D@last_param[0]
-            _, logdet = np.linalg.slogdet(cov_mat)
+            # _, logdet = np.linalg.slogdet(cov_mat)
 
-            post_val = -0.5*logdet -0.5*np.transpose(fit_err)@np.linalg.inv(cov_mat)@fit_err
+            # post_val = -0.5*logdet -0.5*np.transpose(fit_err)@np.linalg.inv(cov_mat)@fit_err
+            inv_cov_mat, logdet = sym_defpos_matrix_inversion_cholesky(cov_mat)
+            post_val = -0.5*logdet -0.5*np.transpose(fit_err)@inv_cov_mat@fit_err
             post_val += 0
             return post_val
         
@@ -203,24 +211,25 @@ class FullBayes_UsingSocSd(MCMC_Gibbs):
         return new_sample
     
     def full_conditional_sampler_fixed_v(self, last_param):
-        new_sample = self.deep_copier(last_param)
+        new_sample = last_param
         return new_sample
-    
-#  0     1         2    3
-# [beta, sigma2_S, phi, v]
-bayes_nugget_inst = FullBayes_UsingSocSd([np.array([0,0,0,0,0,0]), 1, 0.5, 1],
-                                    design_mat_degree1_D1l, data_soil_carbon, data_soil_carbon_sd, data_long_x, data_lat_y,
-                                    (0.01, 0.01), (0.01, 0.01), 20230223)
-bayes_nugget_inst.generate_samples(2000, first_time_est=10, print_iter_cycle=20)
 
-mcmc_diag_inst = MCMC_Diag()
-samples_beta = [sample[0].tolist() for sample in bayes_nugget_inst.MC_sample]
-samples_others = [sample[1:] for sample in bayes_nugget_inst.MC_sample]
-samples_full = [x+y for x, y in zip(samples_beta, samples_others)]
+if __name__ == "__main__":
+    #  0     1         2    3
+    # [beta, sigma2_S, phi, v]
+    bayes_nugget_inst = FullBayes_UsingSocSd([np.array([0,0,0,0,0,0]), 100, 0.01, 1],
+                                        design_mat_degree1_D1l, data_soil_carbon, data_soil_carbon_sd, data_long_x, data_lat_y,
+                                        (0.01, 0.01), (0.01, 0.01), 20230223)
+    bayes_nugget_inst.generate_samples(2000, first_time_est=10, print_iter_cycle=20)
 
-mcmc_diag_inst.set_mc_samples_from_list(samples_full)
-mcmc_diag_inst.write_samples("bayes_nugget_samples.csv")
-#                                  0        1        2        3        4        5        6           7      8 
-mcmc_diag_inst.set_variable_names(["beta0", "beta1", "beta2", "beta3", "beta4", "beta5", "sigma2_S", "phi", "v"])
-mcmc_diag_inst.show_traceplot((3,3), [0,1,2,3,4,5,6,7,8])
-mcmc_diag_inst.show_hist((3,3))
+    mcmc_diag_inst = MCMC_Diag()
+    samples_beta = [sample[0].tolist() for sample in bayes_nugget_inst.MC_sample]
+    samples_others = [sample[1:] for sample in bayes_nugget_inst.MC_sample]
+    samples_full = [x+y for x, y in zip(samples_beta, samples_others)]
+
+    mcmc_diag_inst.set_mc_samples_from_list(samples_full)
+    mcmc_diag_inst.write_samples("hw4_bayes_nugget_samples.csv")
+    #                                  0        1        2        3        4        5        6           7      8 
+    mcmc_diag_inst.set_variable_names(["beta0", "beta1", "beta2", "beta3", "beta4", "beta5", "sigma2_S", "phi", "v"])
+    mcmc_diag_inst.show_traceplot((3,3), [0,1,2,3,4,5,6,7,8])
+    mcmc_diag_inst.show_hist((3,3))
