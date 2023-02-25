@@ -8,7 +8,11 @@ part4 = False
 if part2:
     part2_inst = MCMC_Diag()
     part2_MC_sample = []
-    with open("hw4_fullbayes_samples.csv", newline='') as csvfile:
+    with open("hw4_fullbayes_samples_t1.csv", newline='') as csvfile:
+        csv_reader = csv.reader(csvfile, delimiter=',', quotechar='|')
+        for row in csv_reader:
+            part2_MC_sample.append([float(x) for x in row])
+    with open("hw4_fullbayes_samples_t2.csv", newline='') as csvfile:
         csv_reader = csv.reader(csvfile, delimiter=',', quotechar='|')
         for row in csv_reader:
             part2_MC_sample.append([float(x) for x in row])

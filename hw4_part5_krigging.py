@@ -8,7 +8,11 @@ import matplotlib.pyplot as plt
 
 part2_inst = MCMC_Diag()
 part2_MC_sample = []
-with open("hw4_fullbayes_samples.csv", newline='') as csvfile:
+with open("hw4_fullbayes_samples_t1.csv", newline='') as csvfile:
+    csv_reader = csv.reader(csvfile, delimiter=',', quotechar='|')
+    for row in csv_reader:
+        part2_MC_sample.append([float(x) for x in row])
+with open("hw4_fullbayes_samples_t2.csv", newline='') as csvfile:
     csv_reader = csv.reader(csvfile, delimiter=',', quotechar='|')
     for row in csv_reader:
         part2_MC_sample.append([float(x) for x in row])
@@ -75,7 +79,7 @@ for i, ((x, y), lu) in enumerate(zip(data_pts, data_landuse_str)):
                 krigging_design_mat[row_idx, 3:6] = np.array(landuse_switcher_to_indicators[lu])
 
 # ============================================================
-
+# krigging
 # #                              0        1        2        3        4        5        6           7        8      9    10          11
 # part2_inst.set_variable_names(["beta0", "beta1", "beta2", "beta3", "beta4", "beta5", "sigma2_T", "theta", "phi", "v", "sigma2_S", "tau2"])
 n_data_pts = len(data_pts)
