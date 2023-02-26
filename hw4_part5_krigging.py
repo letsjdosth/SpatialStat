@@ -54,11 +54,11 @@ landuse_switcher_to_indicators = {'F':[0,0,0], 'W':[1,0,0], 'P':[0,1,0], 'X':[0,
 design_mat_degree1_D1l = np.array([[1, x, y] + landuse_switcher_to_indicators[z] for x,y,z in zip(data_long_x, data_lat_y, data_landuse_str)])
 
 # ============================================================
-plt_cm = plt.cm.get_cmap('RdYlBu')
+plt_cm = plt.cm.get_cmap()
 fig_eda, axs_eda = plt.subplots(1, 2, figsize=(10, 5))
 fig_eda.tight_layout()
-axs_eda0 = axs_eda[0].scatter(data_long_x, data_lat_y, c=data_soil_carbon, vmin=0, vmax=55)
-axs_eda[0].set_title("soil carbon")
+axs_eda0 = axs_eda[0].scatter(data_long_x, data_lat_y, c=data_soil_carbon, vmin=0, vmax=55, cmap=plt_cm)
+axs_eda[0].set_title("soil carbon and landuse")
 for i, txt in enumerate(data_landuse_str):
     axs_eda[0].annotate(txt, (data_long_x[i], data_lat_y[i]))
 axs_eda0_handles, axs_eda0_labels = axs_eda0.legend_elements(prop="colors", alpha=0.6)
@@ -104,7 +104,7 @@ print("computing is completed")
 
 krigging_sd_on_grid = cov_grid_grid - cov_grid_data@inv_cov_data_data@np.transpose(cov_grid_data)
 
-axs_eda_1 = axs_eda[1].scatter(*zip(*grid_pts), c=krigging_on_grid, s=50, alpha=0.6, vmin=0, vmax=55)
+axs_eda_1 = axs_eda[1].scatter(*zip(*grid_pts), c=krigging_on_grid, s=50, alpha=0.6, vmin=0, vmax=55, cmap=plt_cm)
 axs_eda1_handles, axs_eda1_labels = axs_eda_1.legend_elements(prop="colors", alpha=0.6)
 axs_eda[1].legend(axs_eda1_handles, axs_eda1_labels)
 axs_eda[1].set_title("predicted")

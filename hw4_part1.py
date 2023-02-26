@@ -41,8 +41,10 @@ axs_eda0 = axs_eda[0].scatter(data_long_x, data_lat_y, c=data_soil_carbon, vmin=
 axs_eda[0].set_title("soil carbon")
 axs_eda0_handles, axs_eda0_labels = axs_eda0.legend_elements(prop="colors", alpha=0.6)
 axs_eda[0].legend(axs_eda0_handles, axs_eda0_labels)
-axs_eda[1].scatter(data_long_x, data_lat_y, s=data_soil_carbon_sd, c=data_soil_carbon_sd)
+axs_eda1 = axs_eda[1].scatter(data_long_x, data_lat_y, s=data_soil_carbon_sd, c=data_soil_carbon_sd)
 axs_eda[1].set_title("sd of soil carbon")
+axs_eda1_handles, axs_eda1_labels = axs_eda1.legend_elements(prop="colors", alpha=0.6)
+axs_eda[1].legend(axs_eda1_handles, axs_eda1_labels)
 axs_eda[2].scatter(data_long_x, data_lat_y, s=data_soil_carbon_sd, c=data_landuse_int)
 for i, txt in enumerate(data_landuse_str):
     axs_eda[2].annotate(txt, (data_long_x[i], data_lat_y[i]))
