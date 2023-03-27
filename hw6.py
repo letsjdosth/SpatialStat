@@ -148,7 +148,7 @@ if __name__=="__main__":
             new_sample[2] = new_lambda_Y
             return new_sample
     
-    true_setting = False
+    true_setting = True
     if true_setting:
         fit_knots_num_v = 10
         fit_knots_num_h = 10
@@ -167,7 +167,7 @@ if __name__=="__main__":
 
     gibbs_inst = fitter([np.zeros(fit_knots_num_v*fit_knots_num_h), 1, 1], y_val, fit_K_ker_mat, fit_W,
                         0.01, 0.01, 0.01, 0.01, 20230322)
-    gibbs_inst.generate_samples(500)
+    gibbs_inst.generate_samples(1000)
     X_samples = [x[0] for x in gibbs_inst.MC_sample]
     lambda_samples = [[x[1], x[2]] for x in gibbs_inst.MC_sample]
     diag_inst2 = MCMC_Diag()
@@ -177,6 +177,7 @@ if __name__=="__main__":
     diag_inst2.show_traceplot((1,2))
     diag_inst2.show_hist((1,2))
     diag_inst2.show_acf(30,(1,2))
+    diag_inst2.print_summaries(6)
 
     diag_inst1 = MCMC_Diag()
     diag_inst1.set_mc_samples_from_list(X_samples)
